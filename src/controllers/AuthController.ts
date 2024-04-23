@@ -83,6 +83,6 @@ export const login = async (req: Request, res: Response) => {
         { expiresIn: '2h' }
     )
     
-    return res.status(200).json({ message: 'Login efetuado com sucesso!', token })
+    return res.status(200).json({ message: 'Login efetuado com sucesso!', id: user.id, token })
 
 }
