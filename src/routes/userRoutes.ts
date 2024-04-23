@@ -5,7 +5,7 @@ import  { Auth }  from "../middlewares/auth";
 const router = Router()
 
 router.post('/movement',  Auth.private, UserController.createMovement)
-
+router.put('/movement', Auth.private, UserController.updateMovement)
 
 
 export default router;
