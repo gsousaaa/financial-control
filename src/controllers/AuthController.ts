@@ -47,7 +47,7 @@ export const register = async (req: Request, res: Response) => {
         { expiresIn: '2h' }
     )
 
-    return res.status(201).json({ id: newUser.id, email: newUser.email, saldo: newUser.saldo, token })
+    return res.status(201).json({ id: newUser.id, email: newUser.email, balance: newUser.balance, token })
 }
 
 export const login = async (req: Request, res: Response) => {

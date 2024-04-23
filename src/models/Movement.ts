@@ -1,10 +1,10 @@
 import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../instances/mysql';
 
-export interface MovementInstance extends Model {
+ export interface MovementInstance extends Model {
     id: number,
     movementType: string,
-    value: number,
+    value: string,
     dateCreated: string,
     user_id: number
 }

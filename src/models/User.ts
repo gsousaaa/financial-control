@@ -7,7 +7,7 @@ export interface UserInstance extends Model {
     name: string,
     email: string, 
     passwordHash: string,
-    saldo: number
+    balance: string
 }
 
 
@@ -31,7 +31,7 @@ export const User = sequelize.define<UserInstance>('User', {
         allowNull: false,
         type: DataTypes.STRING
     }, 
-    saldo: {
+    balance: {
         allowNull: true, 
         defaultValue: 0,
         type: DataTypes.FLOAT
