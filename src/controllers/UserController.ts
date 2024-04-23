@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import JWT from 'jsonwebtoken';
 import dotenv from 'dotenv'
 import { Movement } from '../models/Movement';
 import { User } from '../models/User';
@@ -11,7 +10,7 @@ interface bodyMovement {
     value: string
 }
 
-interface updateBodyMovement extends bodyMovement {
+interface updateOrDeleteBodyMovement extends bodyMovement {
     id: number
 }
 
@@ -54,7 +53,7 @@ export const createMovement = async (req: AuthRequest, res: Response) => {
 }
 
 export const updateMovement = async (req: AuthRequest, res: Response) => {
-    let { id, movementType, value }: updateBodyMovement = req.body
+    let { id, movementType, value }: updateOrDeleteBodyMovement = req.body
 
     if (!id && !movementType || !value) {
         return res.status(400).json({ message: 'Preencha o id e pelo menos 1 campo para editar!' })
@@ -86,21 +85,36 @@ export const updateMovement = async (req: AuthRequest, res: Response) => {
                 balance -= newValue
             }
 
-            await user.update({balance})
+            await user.update({ balance })
 
-            return res.status(200).json({message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance})
+            return res.status(200).json({ message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance })
 
         } else if (movementType !== undefined && movementType !== movement.movementType) {
-           let newMovement =  await movement.update({ movementType })
-           return res.status(200).json({message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance})
+            let newMovement = await movement.update({ movementType })
+            return res.status(200).json({ message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance })
 
         }
 
     } catch (err) {
         res.status(400).json(err)
     }
-
-
-
-
 }
+
+export const deleteMovement = async (req: AuthRequest, res: Response) => {
+    let { id }: updateOrDeleteBodyMovement = req.body
+
+    try {
+        if (!id) {
+            return res.status(400).json({ message: 'Preencha o campo de id para deletar uma movimentação!' })
+        }
+
+        await Movement.destroy({ where: { id } })
+        return res.status(200).json({ message: 'Movimentação deletada com sucesso!' })
+
+    } catch (err) {
+        console.log(err)
+        return res.status(404).json({ err })
+
+    }
+}
+
