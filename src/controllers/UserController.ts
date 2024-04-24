@@ -112,7 +112,12 @@ export const deleteMovement = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ message: 'Preencha o campo de id para deletar uma movimentação!' })
         }
 
-     
+        let movement = await Movement.findOne({where: {id, user_id: req.id}})
+
+        if(!movement) {
+            return res.status(400).json({message: 'Não foi possível deletar a movimentação!'})
+        }
+       
         await Movement.destroy({ where: { id, user_id: req.id }})
         
         return res.status(200).json({ message: 'Movimentação deletada com sucesso!' })
