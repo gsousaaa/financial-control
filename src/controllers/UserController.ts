@@ -3,6 +3,8 @@ import dotenv from 'dotenv'
 import { Movement } from '../models/Movement';
 import { User } from '../models/User';
 import { AuthRequest } from '../middlewares/auth';
+import { Op } from 'sequelize';
+
 dotenv.config()
 
 interface createMovementBody {
@@ -12,6 +14,11 @@ interface createMovementBody {
 
 interface updateBody extends createMovementBody {
     id: number
+}
+
+interface filterDate {
+    startDate: string, 
+    endDate: string
 }
 
 export const createMovement = async (req: AuthRequest, res: Response) => {
@@ -114,13 +121,49 @@ export const deleteMovement = async (req: AuthRequest, res: Response) => {
 }
 
 export const getMovements = async (req: AuthRequest, res: Response) => {
+    
+    const isValidDate = (dateString: string): boolean =>  {
+        const regex = /^(?:19|20)\d\d-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$/;
+        return regex.test(dateString);
+    }
+    
     try {
-        let movements = await Movement.findAll({where: {user_id: req.id}})
-        if(!movements) {
-            return res.status(400).json({message: 'Não foram encontradas movimentações relacionadas a esse usuário!'})
-        }
+        let { startDate, endDate }: filterDate = req.body
+        
+        if(startDate || endDate) {
+            if(startDate && !isValidDate(startDate) || endDate && !isValidDate(endDate)) {
+                return res.status(400).json({message: "Formato de data inválida"})
+            }
+            let whereClause: any = { user_id: req.id, dateCreated: null }
 
-        return res.status(200).json({movements})
+            if(startDate && endDate) {
+                    whereClause.dateCreated = {
+                        [Op.between]: [new Date(startDate), new Date(endDate)]
+                    }
+            } else if(startDate) {
+                whereClause.dateCreated = {
+                    [Op.gte]: new Date(startDate)
+                }
+            } else if(endDate) {
+                whereClause.dateCreated = {
+                    [Op.lte]: new Date(endDate)
+                }
+            }
+
+            let movements = await Movement.findAll({where: whereClause})
+            if(!movements) {
+                return res.status(400).json({message: 'Não foram encontradas movimentações relacionadas a esse usuário!'})
+            }
+    
+            return res.status(200).json({movements})
+        } else {
+            let movements = await Movement.findAll({where: {user_id: req.id}})
+            if(!movements) {
+                return res.status(400).json({message: 'Não foram encontradas movimentações relacionadas a esse usuário!'})
+            }
+    
+            return res.status(200).json({movements})
+        }
     } catch(err) {
         return res.status(400).json({ err })
     }
