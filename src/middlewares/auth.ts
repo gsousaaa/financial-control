@@ -6,6 +6,7 @@ dotenv.config()
 
 export interface AuthRequest extends Request {
         id?: number;
+        username?: string
         email?: string;
 }
 
@@ -20,6 +21,7 @@ export const Auth = {
                     const decoded: any = JWT.verify(token, process.env.JWT_SECRET_KEY as string)
                     if (decoded) {
                         req.id = decoded.id
+                        req.username = decoded.name
                         req.email = decoded.email
                         sucess = true
                     }
