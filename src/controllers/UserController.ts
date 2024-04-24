@@ -114,5 +114,15 @@ export const deleteMovement = async (req: AuthRequest, res: Response) => {
 }
 
 export const getMovements = async (req: AuthRequest, res: Response) => {
-   
+    try {
+        let movements = await Movement.findAll({where: {user_id: req.id}})
+        if(!movements) {
+            return res.status(400).json({message: 'Não foram encontradas movimentações relacionadas a esse usuário!'})
+        }
+
+        return res.status(200).json({movements})
+    } catch(err) {
+        return res.status(400).json({ err })
+    }
 }
+
