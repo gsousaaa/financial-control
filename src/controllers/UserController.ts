@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 import { Movement } from '../models/Movement';
 import { User } from '../models/User';
 import { AuthRequest } from '../middlewares/auth';
-import { Op } from 'sequelize';
+import { Op, where } from 'sequelize';
 
 dotenv.config()
 
@@ -20,6 +20,7 @@ interface filterDate {
     startDate: string, 
     endDate: string
 }
+
 
 export const createMovement = async (req: AuthRequest, res: Response) => {
     let { movementType, value }: createMovementBody = req.body
@@ -111,7 +112,9 @@ export const deleteMovement = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ message: 'Preencha o campo de id para deletar uma movimentação!' })
         }
 
-        await Movement.destroy({ where: { id, user_id: req.id } })
+     
+        await Movement.destroy({ where: { id, user_id: req.id }})
+        
         return res.status(200).json({ message: 'Movimentação deletada com sucesso!' })
 
     } catch (err) {
@@ -129,7 +132,10 @@ export const getMovements = async (req: AuthRequest, res: Response) => {
     
     try {
         let { startDate, endDate }: filterDate = req.body
-        
+        let { page, pageSize }: any = req.query
+        pageSize = pageSize ? parseInt(pageSize) : 5
+        page = page ? parseInt(page) : 1
+
         if(startDate || endDate) {
             if(startDate && !isValidDate(startDate) || endDate && !isValidDate(endDate)) {
                 return res.status(400).json({message: "Formato de data inválida"})
@@ -150,14 +156,14 @@ export const getMovements = async (req: AuthRequest, res: Response) => {
                 }
             }
 
-            let movements = await Movement.findAll({where: whereClause})
+            let movements = await Movement.findAll({where: whereClause, limit: pageSize, offset: (page - 1) * pageSize})
             if(!movements) {
                 return res.status(400).json({message: 'Não foram encontradas movimentações relacionadas a esse usuário!'})
             }
     
             return res.status(200).json({movements, username: req.username})
         } else {
-            let movements = await Movement.findAll({where: {user_id: req.id}})
+            let movements = await Movement.findAll({where: {user_id: req.id}, limit: pageSize, offset: (page - 1) * pageSize})
             if(!movements) {
                 return res.status(400).json({message: 'Não foram encontradas movimentações relacionadas a esse usuário!'})
             }
