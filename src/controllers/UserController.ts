@@ -5,17 +5,17 @@ import { User } from '../models/User';
 import { AuthRequest } from '../middlewares/auth';
 dotenv.config()
 
-interface bodyMovement {
+interface createMovementBody {
     movementType: string,
     value: string
 }
 
-interface updateOrDeleteBodyMovement extends bodyMovement {
+interface updateBody extends createMovementBody {
     id: number
 }
 
 export const createMovement = async (req: AuthRequest, res: Response) => {
-    let { movementType, value }: bodyMovement = req.body
+    let { movementType, value }: createMovementBody = req.body
     let user_id = req.id
 
     if (!movementType || !value) {
@@ -38,7 +38,6 @@ export const createMovement = async (req: AuthRequest, res: Response) => {
 
         if (movementType === 'expense') {
             balance -= valueFloat
-
         }
 
         await user.update({ balance })
@@ -53,7 +52,7 @@ export const createMovement = async (req: AuthRequest, res: Response) => {
 }
 
 export const updateMovement = async (req: AuthRequest, res: Response) => {
-    let { id, movementType, value }: updateOrDeleteBodyMovement = req.body
+    let { id, movementType, value }: updateBody = req.body
 
     if (!id && !movementType || !value) {
         return res.status(400).json({ message: 'Preencha o id e pelo menos 1 campo para editar!' })
@@ -71,7 +70,6 @@ export const updateMovement = async (req: AuthRequest, res: Response) => {
         if (!user) {
             return res.status(400).json({ message: 'Usuário não encontrado' })
         }
-
 
         if (value !== undefined && parseFloat(value) !== parseFloat(movement.value)) {
             let newMovement = await movement.update({ movementType, value })
@@ -92,29 +90,29 @@ export const updateMovement = async (req: AuthRequest, res: Response) => {
         } else if (movementType !== undefined && movementType !== movement.movementType) {
             let newMovement = await movement.update({ movementType })
             return res.status(200).json({ message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance })
-
         }
-
     } catch (err) {
         res.status(400).json(err)
     }
 }
 
 export const deleteMovement = async (req: AuthRequest, res: Response) => {
-    let { id }: updateOrDeleteBodyMovement = req.body
+    let { id } = req.params
 
     try {
         if (!id) {
             return res.status(400).json({ message: 'Preencha o campo de id para deletar uma movimentação!' })
         }
 
-        await Movement.destroy({ where: { id } })
+        await Movement.destroy({ where: { id, user_id: req.id } })
         return res.status(200).json({ message: 'Movimentação deletada com sucesso!' })
 
     } catch (err) {
         console.log(err)
         return res.status(404).json({ err })
-
     }
 }
 
+export const getMovements = async (req: AuthRequest, res: Response) => {
+   
+}
