@@ -155,14 +155,14 @@ export const getMovements = async (req: AuthRequest, res: Response) => {
                 return res.status(400).json({message: 'Não foram encontradas movimentações relacionadas a esse usuário!'})
             }
     
-            return res.status(200).json({movements})
+            return res.status(200).json({movements, username: req.username})
         } else {
             let movements = await Movement.findAll({where: {user_id: req.id}})
             if(!movements) {
                 return res.status(400).json({message: 'Não foram encontradas movimentações relacionadas a esse usuário!'})
             }
     
-            return res.status(200).json({movements})
+            return res.status(200).json({movements, username: req.username})
         }
     } catch(err) {
         return res.status(400).json({ err })
