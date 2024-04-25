@@ -5,6 +5,7 @@ import { sequelize } from '../instances/mysql';
     id: number,
     movementType: string,
     value: string,
+    description: string,
     dateCreated: string,
     user_id: number
 }
@@ -26,6 +27,11 @@ export const Movement = sequelize.define<MovementInstance>('Movement', {
         allowNull: false,
         type: DataTypes.FLOAT
     },
+
+    description: {
+        allowNull: false,
+        type: DataTypes.STRING
+    }, 
     dateCreated: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
