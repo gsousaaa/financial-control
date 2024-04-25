@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../instances/mysql';
 
- export interface MovementInstance extends Model {
+export interface MovementInstance extends Model {
     id: number,
     movementType: string,
     value: string,
@@ -27,11 +27,10 @@ export const Movement = sequelize.define<MovementInstance>('Movement', {
         allowNull: false,
         type: DataTypes.FLOAT
     },
-
     description: {
         allowNull: false,
         type: DataTypes.STRING
-    }, 
+    },
     dateCreated: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

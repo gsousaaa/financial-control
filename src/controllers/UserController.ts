@@ -61,14 +61,15 @@ export const createMovement = async (req: AuthRequest, res: Response) => {
 }
 
 export const updateMovement = async (req: AuthRequest, res: Response) => {
-    let { id, movementType, value }: updateBody = req.body
+    let { movementType, value, description }: updateBody = req.body
+    let { id } = req.params
 
     if (!id && !movementType || !value) {
         return res.status(400).json({ message: 'Preencha o id e pelo menos 1 campo para editar!' })
     }
 
     try {
-        let movement = await Movement.findByPk(id)
+        let movement = await Movement.findOne({where: {id, user_id: req.id}})
         let user_id = req.id
         let user = await User.findByPk(user_id)
 
@@ -81,7 +82,7 @@ export const updateMovement = async (req: AuthRequest, res: Response) => {
         }
 
         if (value !== undefined && parseFloat(value) !== parseFloat(movement.value)) {
-            let newMovement = await movement.update({ movementType, value })
+            let newMovement = await movement.update({ movementType, value, description })
 
             let newValue = parseFloat(value)
             let balance = parseFloat(user.balance)
@@ -98,6 +99,9 @@ export const updateMovement = async (req: AuthRequest, res: Response) => {
 
         } else if (movementType !== undefined && movementType !== movement.movementType) {
             let newMovement = await movement.update({ movementType })
+            return res.status(200).json({ message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance })
+        } else if (description !== undefined && description !== movement.description) {
+            let newMovement = await movement.update({ description })
             return res.status(200).json({ message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance })
         }
     } catch (err) {
