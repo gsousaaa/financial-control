@@ -9,7 +9,8 @@ dotenv.config()
 
 interface createMovementBody {
     movementType: string,
-    value: string
+    value: string,
+    description: string
 }
 
 interface updateBody extends createMovementBody {
@@ -23,10 +24,10 @@ interface filterDate {
 
 
 export const createMovement = async (req: AuthRequest, res: Response) => {
-    let { movementType, value }: createMovementBody = req.body
+    let { movementType, value, description }: createMovementBody = req.body
     let user_id = req.id
 
-    if (!movementType || !value) {
+    if (!movementType || !value || !description) {
         return res.status(400).json({ message: "Preencha os  campos obrigatórios" })
     }
 
@@ -50,7 +51,7 @@ export const createMovement = async (req: AuthRequest, res: Response) => {
 
         await user.update({ balance })
 
-        let newMovement = await Movement.create({ movementType, value, user_id })
+        let newMovement = await Movement.create({ movementType, value, description, user_id })
 
         res.status(201).json({ newMovement, actual_balance: user.balance })
     } catch (err) {
@@ -187,7 +188,7 @@ export const getBalance = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ message: 'Usuário não encontrado' })
         }
 
-        return res.status(200).json({id: req.id, username: req.username, balance: user.balance})
+        return res.status(200).json({ id: req.id, username: req.username, balance: user.balance })
 
     } catch (err) {
         return res.status(400).json({ err })
