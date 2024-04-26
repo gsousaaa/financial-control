@@ -38,7 +38,7 @@ export const createMovement = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ message: "Usuário não encontrado" })
         }
 
-        let balance = parseFloat(user.balance)
+        let balance = user.balance
         let valueFloat = parseFloat(value)
 
         if (movementType === 'revenue') {
@@ -64,12 +64,8 @@ export const updateMovement = async (req: AuthRequest, res: Response) => {
     let { movementType, value, description }: updateBody = req.body
     let { id } = req.params
 
-    if (!id && !movementType || !value) {
-        return res.status(400).json({ message: 'Preencha o id e pelo menos 1 campo para editar!' })
-    }
-
     try {
-        let movement = await Movement.findOne({where: {id, user_id: req.id}})
+        let movement = await Movement.findOne({ where: { id, user_id: req.id } })
         let user_id = req.id
         let user = await User.findByPk(user_id)
 
@@ -81,29 +77,52 @@ export const updateMovement = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ message: 'Usuário não encontrado' })
         }
 
-        if (value !== undefined && parseFloat(value) !== parseFloat(movement.value)) {
-            let newMovement = await movement.update({ movementType, value, description })
+        // Calcula a diferença entre o valor antigo e o novo valor
+        let oldValue = parseFloat(movement.value)
+        let newValue = parseFloat(value)
+        let balance = user.balance
+        let difference = newValue - oldValue
+        let oldMovementType = movement.movementType
 
-            let newValue = parseFloat(value)
-            let balance = parseFloat(user.balance)
 
-            if (movementType === 'revenue') {
-                balance += newValue
-            } else if (movementType === 'expense') {
-                balance -= newValue
+        if (movementType && movementType !== oldMovementType) {
+            // Se houve mudança, ajusta o saldo de acordo com os tipos de movimento
+            if (oldMovementType === 'revenue') {
+                balance -= oldValue // Subtrai o valor antigo do saldo
+            } else if (oldMovementType === 'expense') {
+                balance += oldValue // Adiciona o valor antigo ao saldo
             }
-
-            await user.update({ balance })
-
-            return res.status(200).json({ message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance })
-
-        } else if (movementType !== undefined && movementType !== movement.movementType) {
-            let newMovement = await movement.update({ movementType })
-            return res.status(200).json({ message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance })
-        } else if (description !== undefined && description !== movement.description) {
-            let newMovement = await movement.update({ description })
-            return res.status(200).json({ message: 'Movimento editado com sucesso', newMovement, actual_balance: user.balance })
         }
+
+
+        // Atualiza a movimentação com os campos fornecidos
+        if (movementType) {
+            movement.movementType = movementType
+        } else {
+            movement.movementType = oldMovementType
+            movementType = oldMovementType
+        }
+        
+        if (value) {
+            movement.value = value
+        }
+
+        if (description) {
+            movement.description = description
+        }
+
+        if (movementType === 'revenue') {
+            balance += difference
+        } else if (movementType === 'expense') {
+            balance -= difference
+        }
+
+        await movement.save()
+        await user.update({balance})
+
+        return res.status(200).json({ message: 'Movimentação atualizada com sucesso!', updatedMovement: movement, updatedBalance: user.balance })
+
+       
     } catch (err) {
         res.status(400).json(err)
     }
