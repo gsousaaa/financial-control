@@ -7,14 +7,10 @@ import { Op, where } from 'sequelize';
 
 dotenv.config()
 
-interface createMovementBody {
+interface movementBody {
     movementType: string,
     value: string,
     description: string
-}
-
-interface updateBody extends createMovementBody {
-    id: number
 }
 
 interface filterDate {
@@ -24,7 +20,7 @@ interface filterDate {
 
 
 export const createMovement = async (req: AuthRequest, res: Response) => {
-    let { movementType, value, description }: createMovementBody = req.body
+    let { movementType, value, description }: movementBody = req.body
     let user_id = req.id
 
     if (!movementType || !value || !description) {
@@ -38,22 +34,9 @@ export const createMovement = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ message: "Usuário não encontrado" })
         }
 
-        let balance = user.balance
-        let valueFloat = parseFloat(value)
-
-        if (movementType === 'revenue') {
-            balance += valueFloat
-        }
-
-        if (movementType === 'expense') {
-            balance -= valueFloat
-        }
-
-        await user.update({ balance })
-
         let newMovement = await Movement.create({ movementType, value, description, user_id })
 
-        res.status(201).json({ newMovement, actual_balance: user.balance })
+        res.status(201).json({ newMovement })
     } catch (err) {
         res.status(404).json({ err })
     }
@@ -61,70 +44,26 @@ export const createMovement = async (req: AuthRequest, res: Response) => {
 }
 
 export const updateMovement = async (req: AuthRequest, res: Response) => {
-    let { movementType, value, description }: updateBody = req.body
-    let { id } = req.params
+    const { movementType, value, description }: movementBody = req.body;
+    const { id } = req.params;
 
     try {
-        let movement = await Movement.findOne({ where: { id, user_id: req.id } })
-        let user_id = req.id
-        let user = await User.findByPk(user_id)
+        const movement = await Movement.findOne({ where: { id, user_id: req.id } });
 
         if (!movement) {
-            return res.status(400).json({ message: 'Movimentação não encontrada' })
+            return res.status(400).json({ message: 'Movimentação não encontrada' });
         }
 
-        if (!user) {
-            return res.status(400).json({ message: 'Usuário não encontrado' })
-        }
+        let newMovement = movementType ? movementType : movement.movementType
+        let newValue = value ? value : movement.value
+        let newDescription = description ? description : movement.description;
 
-        // Calcula a diferença entre o valor antigo e o novo valor
-        let oldValue = parseFloat(movement.value)
-        let newValue = parseFloat(value)
-        let balance = user.balance
-        let difference = newValue - oldValue
-        let oldMovementType = movement.movementType
+        let updatedUser = await movement.update({ movementType: newMovement, value: newValue, description: newDescription })
 
+        return res.status(200).json({ updatedUser })
 
-        if (movementType && movementType !== oldMovementType) {
-            // Se houve mudança, ajusta o saldo de acordo com os tipos de movimento
-            if (oldMovementType === 'revenue') {
-                balance -= oldValue // Subtrai o valor antigo do saldo
-            } else if (oldMovementType === 'expense') {
-                balance += oldValue // Adiciona o valor antigo ao saldo
-            }
-        }
-
-
-        // Atualiza a movimentação com os campos fornecidos
-        if (movementType) {
-            movement.movementType = movementType
-        } else {
-            movement.movementType = oldMovementType
-            movementType = oldMovementType
-        }
-        
-        if (value) {
-            movement.value = value
-        }
-
-        if (description) {
-            movement.description = description
-        }
-
-        if (movementType === 'revenue') {
-            balance += difference
-        } else if (movementType === 'expense') {
-            balance -= difference
-        }
-
-        await movement.save()
-        await user.update({balance})
-
-        return res.status(200).json({ message: 'Movimentação atualizada com sucesso!', updatedMovement: movement, updatedBalance: user.balance })
-
-       
     } catch (err) {
-        res.status(400).json(err)
+        return res.status(400).json(err);
     }
 }
 
@@ -165,10 +104,12 @@ export const getMovements = async (req: AuthRequest, res: Response) => {
         pageSize = pageSize ? parseInt(pageSize) : 5
         page = page ? parseInt(page) : 1
 
+        // Implementando o filtro de busca por data
         if (startDate || endDate) {
             if (startDate && !isValidDate(startDate) || endDate && !isValidDate(endDate)) {
                 return res.status(400).json({ message: "Formato de data inválida" })
             }
+
             let whereClause: any = { user_id: req.id, dateCreated: null }
 
             if (startDate && endDate) {
@@ -207,14 +148,29 @@ export const getMovements = async (req: AuthRequest, res: Response) => {
 export const getBalance = async (req: AuthRequest, res: Response) => {
     try {
         let user = await User.findByPk(req.id)
+
+        let movements = await Movement.findAll({ where: { user_id: req.id } })
+
         if (!user) {
             return res.status(400).json({ message: 'Usuário não encontrado' })
         }
 
+        let balance = 0
+
+        movements.forEach(movement => {
+            if (movement.movementType == 'revenue') {
+                balance += parseFloat(movement.value)
+            } else if (movement.movementType == 'expense') {
+                balance -= parseFloat(movement.value)
+            }
+        });
+
+        await user.update({ balance })
         return res.status(200).json({ id: req.id, username: req.username, balance: user.balance })
 
     } catch (err) {
         return res.status(400).json({ err })
     }
 }
+
 
