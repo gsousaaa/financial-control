@@ -57,10 +57,6 @@ export const login = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Preencha os campos!' })
     }
 
-    if (!isEmail(email)) {
-        return res.status(400).json({ message: 'E-mail inválido' })
-    }
-
     let user = await User.findOne({
         where: {
             email
@@ -86,3 +82,4 @@ export const login = async (req: Request, res: Response) => {
     return res.status(200).json({ message: 'Login efetuado com sucesso!', name: user.name, id: user.id, token })
 
 }
+
