@@ -8,7 +8,7 @@ Este projeto consiste em uma API REST desenvolvida em Node.js com TypeScript, ut
 2. Clone este repositório em sua máquina local.
 3. Instale as dependências do projeto executando o comando `npm install`.
 4. Configure as variáveis de ambiente no arquivo `.env`, incluindo a `JWT_SECRET_KEY` e as credenciais do banco de dados.
-5. Execute o comando `npm run start` para iniciar o servidor.
+5. Execute o comando `npm run start-dev` para iniciar o servidor.
 
 ### Endpoints
 A seguir, são listadas as rotas disponíveis na API:
